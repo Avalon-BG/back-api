@@ -16,11 +16,11 @@ QUESTS_BLUEPRINT.before_request(db_connect)
 
 @QUESTS_BLUEPRINT.route("/games/<string:game_id>/quest_unsend", methods=["POST"])
 def quest_unsend_(game_id):
-    """This function sends new quest of the game <game_id>.
+    """This function sends new quest of the game <game_id>
         - method: POST
-        - route: /<game_id>/quest_unsend
+        - route: /games/<game_id>/quest_unsend
         - payload example: None
-        - response example: board
+        - response example: <game_id>'s board
     """
     try:
         game_updated = quest_unsend(game_id=game_id)
@@ -32,7 +32,12 @@ def quest_unsend_(game_id):
 
 @QUESTS_BLUEPRINT.route("/games/<string:game_id>/quests/<int:quest_number>", methods=["DELETE", "GET", "POST", "PUT"])
 def quest_send_(game_id, quest_number):
-
+    """This function sends new quest of the game <game_id>
+        - method: ["DELETE", "GET", "POST", "PUT"]
+        - route: /games/<game_id>/quests/<quest_number>
+        - payload example: depending of the method
+        - response example: <game_id>'s board
+    """
     try:
         game_updated = quest_send(
             method=request.method,
