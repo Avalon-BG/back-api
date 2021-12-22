@@ -18,7 +18,7 @@ def resolve_key_id(table, list_id):
     return [dict_players[ident] for ident in list_id]
 
 
-def db_get_game(game_id):
+def db_get_game(game_id=None):
     """This function visualize the game of the <game_id>"""
 
     if not game_id:
@@ -39,15 +39,18 @@ def db_get_game(game_id):
 
 
 def db_get_table(table_name):
-    """This function return the table associated to the current game."""
-
+    """This function returns the table associated to the table name."""
     return list(r.RethinkDB().table(table_name).run())
 
 
 def db_get_value(table, ident, key):
     """This function finds the key value in the table."""
+    try:
+        requested_value = r.RethinkDB().table(table).get(ident)[key].run()
+    except r.errors.ReqlNonExistenceError:
+        raise AvalonError("Requested value is not available!")
 
-    return r.RethinkDB().table(table).get(ident)[key].run()
+    return requested_value
 
 
 def db_update_value(table, ident, key, value):

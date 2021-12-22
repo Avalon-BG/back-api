@@ -13,12 +13,27 @@ def game_put(payload):
         - method: PUT
         - route: /games
         - payload example: {
-                               "names": [
-                                   "name1",
-                                   "name2",
-                                   "name3",
-                                   "name4",
-                                   "name5"
+                               "players": [
+                                    {
+                                        "name": "name0",
+                                        "avatar_index": 0
+                                    },
+                                    {
+                                        "name": "name1",
+                                        "avatar_index": 1
+                                    },
+                                    {
+                                        "name": "name2",
+                                        "avatar_index": 2
+                                    },
+                                    {
+                                        "name": "name3",
+                                        "avatar_index": 3
+                                    },
+                                    {
+                                        "name": "name4",
+                                        "avatar_index": 4
+                                    }
                                ],
                                "roles": [
                                    "oberon",
@@ -30,8 +45,9 @@ def game_put(payload):
                                 "id": "2669a9fe-37c4-4139-ab78-8e3f0d0607d0",
                                 "players": [
                                     {
+                                        "avatar_index": 0,
                                         "id": "95763b27-de50-4d39-8ac2-2a7010281788",
-                                        "name": "name1",
+                                        "name": "name0",
                                         "role": "assassin",
                                         "team": "red"
                                     },
@@ -39,37 +55,59 @@ def game_put(payload):
                                         ...
                                     },
                                     {
+                                        "avatar_index": 4,
                                         "id": "83d21d25-f359-4ddc-9048-69ba1e6cf5b5",
-                                        "name": "name5",
+                                        "name": "name4",
                                         "role": "morgan",
                                         "team": "red"
                                     }
                                 ]
                             }
     """
-    if set(payload) != {"names", "roles"}:
-        raise AvalonError("Only 'names' and 'roles' are required!")
+    if not payload or set(payload) != {"players", "roles"}:
+        raise AvalonError("Only 'players' and 'roles' are required!")
 
-    if not isinstance(payload["names"], list) or not isinstance(payload["roles"], list):
-        raise AvalonError("Both 'names' and 'roles' must be a list!")
+    for key, val in payload.items():
+        if not isinstance(val, list):
+            raise AvalonError("Both 'players' and 'roles' must be a list!")
+
+        if key == "players":
+            for player in val:
+                if not isinstance(player, dict):
+                    raise AvalonError("'player' must be an object!")
+
+                if set(player) != {"name", "avatar_index"}:
+                    raise AvalonError("'Only 'name' and 'avatar_index' are required for a player!")
+
+                if not isinstance(player["name"], str):
+                    raise AvalonError("'name' of a player must be a string!")
+
+                if not isinstance(player["avatar_index"], int):
+                    raise AvalonError("'avatar_index' of a player must be an int!")
+
+        elif key == "roles":
+            for elem in val:
+                if not isinstance(elem, str):
+                    raise AvalonError("Elements in 'roles' must be a string!")
 
     rules = get_rules()
     min_nb_player = int(min(rules, key=int))
     max_nb_player = int(max(rules, key=int))
 
-    if not min_nb_player <= len(payload["names"]) <= max_nb_player:
+    if not min_nb_player <= len(payload["players"]) <= max_nb_player:
         raise AvalonError("Player number should be between {} and {}!".format(min_nb_player, max_nb_player))
 
-    if len(payload["names"]) != len(set(payload["names"])):
+    if len(payload["players"]) != len(set([player["name"] for player in payload["players"]])):
         raise AvalonError("Players name should be unique!")
 
-    if [player for player in payload["names"] if (player.isspace() or player == "")]:
-        raise AvalonError("Players' name cannot be empty!")
+    for player in payload["players"]:
+        if player["name"].isspace() or player["name"] == "":
+            raise AvalonError("Players' name cannot be empty!")
 
     if len(payload["roles"]) != len(set(payload["roles"])):
         raise AvalonError("Players role should be unique!")
 
-    available_roles = ("oberon", "morgan", "mordred", "perceval")  #TODO: ne devrait pas etre en dur
+    available_roles = ("oberon", "morgan", "mordred", "perceval")  #TODO: should be a variable
     for role in payload["roles"]:
         if role not in available_roles:
             raise AvalonError("Players role should be {}, {}, {} or {}!".format(*available_roles))
@@ -81,13 +119,17 @@ def game_put(payload):
         raise AvalonError("'perceval' is selected but 'morgan' is not!")
 
     # find rules
-    game_rules = rules[str(len(payload["names"]))]
+    game_rules = rules[str(len(payload["players"]))]
 
     if len([role for role in payload["roles"] if role != "perceval"]) > game_rules["red"]:
         raise AvalonError("Too many red roles chosen!")
 
     # add roles to players
-    players = roles_and_players(payload, game_rules["red"], game_rules["blue"])
+    players = roles_and_players(
+        dict_names_roles=payload,
+        max_red=game_rules["red"],
+        max_blue=game_rules["blue"]
+    )
 
     # find players
     list_id_players = r.RethinkDB().table("players").insert(players).run()["generated_keys"]
@@ -99,7 +141,7 @@ def game_put(payload):
         {
             "players": list_id_players,
             "quests": list_id_quests,
-            "current_id_player": list_id_players[choice(range(len(payload["names"])))],
+            "current_id_player": list_id_players[choice(range(len(payload["players"])))],
             "current_quest": 0,
             "nb_quest_unsend": 0
         },
@@ -142,7 +184,8 @@ def roles_and_players(dict_names_roles, max_red, max_blue):
     list_players = []
     for ind, role in enumerate(list_roles):
         player = {
-            "name": dict_names_roles["names"][ind],
+            "avatar_index": dict_names_roles["players"][ind]["avatar_index"],
+            "name": dict_names_roles["players"][ind]["name"],
             "role": role,
             "team": "blue"
         }
@@ -159,44 +202,42 @@ def roles_and_players(dict_names_roles, max_red, max_blue):
 
 
 def game_guess_merlin(game_id, payload):
-    """
-    """
 
     if len(payload) != 1:
-        raise AvalonError("Only 1 vote required ('assassin') !")
+        raise AvalonError("Only 1 vote required ('assassin')!")
 
     game = r.RethinkDB().table("games").get(game_id).run()
     if not game:
-        raise AvalonError("Game's id {} does not exist !".format(game_id))
+        raise AvalonError("Game's id {} does not exist!".format(game_id))
 
     if game["nb_quest_unsend"] == 5:
-        raise AvalonError("Game is over because 5 consecutive laps have been passed : Red team won !")
+        raise AvalonError("Game is over because 5 consecutive laps have been passed : Red team won!")
 
     assassin_id = list(payload)[0]
     vote_assassin = payload[assassin_id]
 
     if assassin_id not in game["players"]:
-        raise AvalonError("Player {} is not in this game !".format(assassin_id))
+        raise AvalonError("Player {} is not in this game!".format(assassin_id))
 
     if "assassin" not in r.RethinkDB().table("players").get(assassin_id).run():
-        raise AvalonError("Player {} is not 'assassin' !".format(assassin_id))
+        raise AvalonError("Player {} is not 'assassin'!".format(assassin_id))
 
     if vote_assassin not in game["players"]:
-        raise AvalonError("Player {} is not in this game !".format(vote_assassin))
+        raise AvalonError("Player {} is not in this game!".format(vote_assassin))
 
     game = r.RethinkDB().table("games").get(game_id).run()
     if not game:
-        raise AvalonError("Game's id {} does not exist !".format(game_id))
+        raise AvalonError("Game's id {} does not exist!".format(game_id))
 
     result = game.get("result")
     if not result:
-        raise AvalonError("Game's status is not established !")
+        raise AvalonError("Game's status is not established!")
 
     if not result["status"]:
-        raise AvalonError("Games's status should be 'true' (ie blue team won) !")
+        raise AvalonError("Games's status should be 'true' (ie blue team won)!")
 
     if "guess_merlin_id" in result:
-        raise AvalonError("Merlin already chosen !")
+        raise AvalonError("Merlin already chosen!")
 
     result["guess_merlin_id"] = vote_assassin
     if db_get_value("players", vote_assassin, "role") == "merlin":

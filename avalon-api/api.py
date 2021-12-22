@@ -3,21 +3,40 @@
 import argparse
 
 from flask import Flask, jsonify
+from flask_restx import Api
 from flask.logging import create_logger
 
+from avalon import __version__ as api_version
 from avalon.mp3 import create_mp3
 
 from api_utils import HTTPError
-from pylib import AVALON_BLUEPRINT
-from quests import QUESTS_BLUEPRINT
+from pylib import AVALON_BLUEPRINT, DATABASE_NAMESPACE, GAMES_NAMESPACE, \
+                  MP3_NAMESPACE, PLAYERS_NAMESPACE, RULES_NAMESPACE
+from quests import QUESTS_BLUEPRINT, QUESTS_NAMESPACE
 
 # from db_utils import db_connect
 
 
 APP = Flask(__name__)
 
+
+API = Api(
+    QUESTS_BLUEPRINT,
+    version=api_version,
+    title="Avalon API",
+    description="A simple Avalon API"
+)
+
 APP.register_blueprint(AVALON_BLUEPRINT)
 APP.register_blueprint(QUESTS_BLUEPRINT)
+
+API.add_namespace(DATABASE_NAMESPACE)
+API.add_namespace(GAMES_NAMESPACE)
+API.add_namespace(MP3_NAMESPACE)
+API.add_namespace(QUESTS_NAMESPACE)
+API.add_namespace(PLAYERS_NAMESPACE)
+API.add_namespace(RULES_NAMESPACE)
+
 # APP.before_first_request(db_connect)
 
 LOG = create_logger(APP)
@@ -49,7 +68,7 @@ if __name__ == '__main__':
     # HANDLER.setLevel(logging.INFO)
     # APP.logger.addHandler(HANDLER)
 
-    create_mp3(output_mp3_path="resources")
+    #create_mp3(output_mp3_path="resources")
 
     # print(APP.before_first_request_funcs)
 

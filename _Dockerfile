@@ -4,10 +4,8 @@ MAINTAINER Romain Thierry-Laumont "romain.121@hotmail.fr"
 
 RUN apt-get update && apt-get -y upgrade && apt-get install -y ffmpeg
 
-#COPY pip.conf /etc/pip.conf
+COPY pip.conf /etc/pip.conf
 COPY avalon-api /avalon-api
-COPY avalon-py/dist/avalon-1.0.0.tar.gz avalon-1.0.0.tar.gz
-RUN pip install avalon-1.0.0.tar.gz
 RUN pip install -r avalon-api/requirements/requirements.txt
 WORKDIR avalon-api
 CMD ["sh", "-c", "python api.py"]

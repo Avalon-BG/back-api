@@ -4,6 +4,11 @@ from avalon.db_utils import db_get_value, db_update_value, db_get_game
 from avalon.exception import AvalonError
 
 
+def check_quest_number(quest_number):
+    if not 0 <= quest_number <= 4:
+        raise AvalonError("Quest's number should be between 0 and 4!")
+
+
 def update_current_id_player(game_id):
     """This function update 'current_id_player' of the game game_id."""
 
@@ -81,48 +86,9 @@ def quest_unsend(game_id):
     return game_updated
 
 
-def quest_send(method, payload, game_id, quest_number):
-
-    list_methods = [
-        "DELETE",
-        "GET",
-        "POST",
-        "PUT"
-    ]
-
-    if method not in list_methods:
-        raise AvalonError("Method should be in '{}'!".format(list_methods))
-
-    if method == "DELETE":
-        game_updated = quest_delete(
-            game_id=game_id,
-            quest_number=quest_number
-        )
-
-    elif method == "GET":
-        game_updated = quest_get(
-            game_id=game_id,
-            quest_number=quest_number
-        )
-
-    elif method == "POST":
-        game_updated = quest_post(
-            payload=payload,
-            game_id=game_id,
-            quest_number=quest_number
-        )
-
-    elif method == "PUT":
-        game_updated = quest_put(
-            payload=payload,
-            game_id=game_id,
-            quest_number=quest_number
-        )
-
-    return game_updated
-
-
 def quest_delete(game_id, quest_number):
+
+    check_quest_number(quest_number=quest_number)
 
     id_quest_number = db_get_value(
         table="games",
@@ -140,11 +106,16 @@ def quest_delete(game_id, quest_number):
 
 def quest_get(game_id, quest_number):
 
+    check_quest_number(quest_number=quest_number)
+
     game = r.RethinkDB().table("games").get(game_id).run()
     if not game:
         raise AvalonError("Game's id '{}' does not exist!".format(game_id))
 
     game_updated = r.RethinkDB().table("quests").get(game["quests"][quest_number]).run()
+
+    if "status" not in game_updated:
+        raise AvalonError("The vote number '{}' has not started!".format(quest_number))
 
     if game_updated["status"] is None:
         raise AvalonError("The vote number '{}' is not finished!".format(quest_number))
@@ -154,12 +125,14 @@ def quest_get(game_id, quest_number):
 
 def quest_post(payload, game_id, quest_number):
 
+    check_quest_number(quest_number=quest_number)
+
     game = r.RethinkDB().table("games").get(game_id).run()
     if not game:
         raise AvalonError("Game's id '{}' does not exist!".format(game_id))
 
     if game["nb_quest_unsend"] == 5:
-        raise AvalonError("Game is over because 5 consecutive laps have been passed : Red team won!")
+        raise AvalonError("Game is over because 5 consecutive laps have been passed: Red team won!")
 
     if "result" in game:
         raise AvalonError("Game is over!")
@@ -223,6 +196,8 @@ def quest_post(payload, game_id, quest_number):
 
 
 def quest_put(payload, game_id, quest_number):
+
+    check_quest_number(quest_number=quest_number)
 
     game = r.RethinkDB().table("games").get(game_id).run()
     if not game:
