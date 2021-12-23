@@ -6,8 +6,8 @@ from flask import Flask, jsonify
 from flask_restx import Api
 from flask.logging import create_logger
 
-from avalon import __version__ as api_version
-from avalon.mp3 import create_mp3
+from avalonBG import __version__ as api_version
+from avalonBG.mp3 import create_mp3
 
 from api_utils import HTTPError
 from pylib import AVALON_BLUEPRINT, DATABASE_NAMESPACE, GAMES_NAMESPACE, \

@@ -4,12 +4,12 @@ from flask import Blueprint, jsonify, make_response, request, send_file
 from flask_cors import CORS
 from flask_restx import fields, marshal_with, Namespace, Resource
 
-from avalon import __version__ as api_version
-from avalon.db_utils import db_connect, db_get_game, db_get_table, restart_db
-from avalon.exception import AvalonError
-from avalon.games import game_put, game_guess_merlin
-from avalon.mp3 import get_mp3_roles_path
-from avalon.rules import get_rules
+from avalonBG import __version__ as api_version
+from avalonBG.db_utils import db_connect, db_get_game, db_get_table, restart_db
+from avalonBG.exception import AvalonBGError
+from avalonBG.games import game_put, game_guess_merlin
+from avalonBG.mp3 import get_mp3_roles_path
+from avalonBG.rules import get_rules
 
 from api_utils import HTTPError
 
@@ -54,7 +54,7 @@ PLAYER_MODEL = GAMES_NAMESPACE.model(
             description="This player is the assassin or not",
             help="Assassin guess merlin"
         ),
-        "avatar_index": fields.Int(
+        "avatar_index": fields.Integer(
             required=True,
             description="Index of the avatar",
             example=1
@@ -197,7 +197,7 @@ class Database(Resource):
         """Restart the database"""
         try:
             response_msg = restart_db(payload_tables=request.json)
-        except AvalonError as error:
+        except AvalonBGError as error:
             raise HTTPError(str(error), status_code=400) from error
 
         return make_response(response_msg, 204)
@@ -215,7 +215,7 @@ class Rules(Resource):
         """Fetch the rules"""
         try:
             rules = get_rules()
-        except AvalonError as error:
+        except AvalonBGError as error:
             raise HTTPError(str(error), status_code=400) from error
 
         return jsonify(rules)
@@ -233,7 +233,7 @@ class Players(Resource):
         """Fetch the players"""
         try:
             table_players = db_get_table(table_name="players")
-        except AvalonError as error:
+        except AvalonBGError as error:
             raise HTTPError(str(error), status_code=400) from error
 
         return jsonify(table_players)
@@ -251,7 +251,7 @@ class Mp3(Resource):
         """Fetch mp3 file depending on roles in the game <game_id>"""
         try:
             mp3_roles_path = get_mp3_roles_path(game_id=game_id)
-        except AvalonError as error:
+        except AvalonBGError as error:
             raise HTTPError(str(error), status_code=400) from error
 
         return send_file(mp3_roles_path, attachment_filename="roles.mp3", mimetype="audio/mpeg")
@@ -269,7 +269,7 @@ class GuessMerlin(Resource):
         """Assassin try to guess merlin"""
         try:
             updated_game = game_guess_merlin(game_id=game_id, payload=request.json)
-        except AvalonError as error:
+        except AvalonBGError as error:
             raise HTTPError(str(error), status_code=400) from error
 
         return jsonify(updated_game)
@@ -287,7 +287,7 @@ class Games(Resource):
         """Fetch the games"""
         try:
             game = db_get_game()
-        except AvalonError as error:
+        except AvalonBGError as error:
             raise HTTPError(str(error), status_code=400) from error
 
         return jsonify(game)
@@ -305,7 +305,7 @@ class Games(Resource):
         """Add a new game"""
         try:
             game = game_put(payload=request.json)
-        except AvalonError as error:
+        except AvalonBGError as error:
             raise HTTPError(str(error), status_code=400) from error
 
         return jsonify(game)
@@ -323,7 +323,7 @@ class GamesGamesId(Resource):
         """Fetch the game <game_id>"""
         try:
             game = db_get_game(game_id=game_id)
-        except AvalonError as error:
+        except AvalonBGError as error:
             raise HTTPError(str(error), status_code=400) from error
 
         return jsonify(game)

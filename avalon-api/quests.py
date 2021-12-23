@@ -2,9 +2,9 @@ from flask import Blueprint, jsonify, request
 from flask_cors import CORS
 from flask_restx import Namespace, Resource, fields
 
-from avalon.db_utils import db_connect, db_get_table
-from avalon.exception import AvalonError
-from avalon.quests import quest_delete, quest_get, quest_post, quest_put, quest_unsend
+from avalonBG.db_utils import db_connect, db_get_table
+from avalonBG.exception import AvalonBGError
+from avalonBG.quests import quest_delete, quest_get, quest_post, quest_put, quest_unsend
 
 from api_utils import HTTPError
 
@@ -67,7 +67,7 @@ class Quests(Resource):
         """Fetch the quests"""
         try:
             table_quests = db_get_table(table_name="quests")
-        except AvalonError as error:
+        except AvalonBGError as error:
             raise HTTPError(str(error), status_code=400) from error
 
         return jsonify(table_quests)
@@ -88,7 +88,7 @@ class QuestsUnsend(Resource):
         """This function sends new quest of the game <game_id>"""
         try:
             game_updated = quest_unsend(game_id=game_id)
-        except AvalonError as error:
+        except AvalonBGError as error:
             raise HTTPError(str(error), status_code=400) from error
 
         return jsonify(game_updated)
@@ -113,7 +113,7 @@ class QuestsSend(Resource):
                 game_id=game_id,
                 quest_number=quest_number
             )
-        except AvalonError as error:
+        except AvalonBGError as error:
             raise HTTPError(str(error), status_code=400) from error
 
         return jsonify(game_updated)
@@ -135,7 +135,7 @@ class QuestsSend(Resource):
                 game_id=game_id,
                 quest_number=quest_number
             )
-        except AvalonError as error:
+        except AvalonBGError as error:
             raise HTTPError(str(error), status_code=400) from error
 
         return jsonify(game_updated)
@@ -159,7 +159,7 @@ class QuestsSend(Resource):
                 game_id=game_id,
                 quest_number=quest_number
             )
-        except AvalonError as error:
+        except AvalonBGError as error:
             raise HTTPError(str(error), status_code=400) from error
 
         return jsonify(game_updated)
@@ -183,7 +183,7 @@ class QuestsSend(Resource):
                 game_id=game_id,
                 quest_number=quest_number
             )
-        except AvalonError as error:
+        except AvalonBGError as error:
             raise HTTPError(str(error), status_code=400) from error
 
         return jsonify(game_updated)
