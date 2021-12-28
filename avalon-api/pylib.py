@@ -247,7 +247,7 @@ class Mp3(Resource):
             400: "Invalid Argument"
         }
     )
-    def post(self, game_id):
+    def get(self, game_id):
         """Fetch mp3 file depending on roles in the game <game_id>"""
         try:
             mp3_roles_path = get_mp3_roles_path(game_id=game_id)

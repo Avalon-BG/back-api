@@ -68,7 +68,7 @@ if __name__ == '__main__':
     # HANDLER.setLevel(logging.INFO)
     # APP.logger.addHandler(HANDLER)
 
-    #create_mp3(output_mp3_path="resources")
+    create_mp3(output_mp3_path="resources")
 
     # print(APP.before_first_request_funcs)
 
